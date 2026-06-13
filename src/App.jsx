@@ -135,22 +135,16 @@ function App() {
 
   return (
     <div className="app">
-      {/* Hero Section */}
-      <section className="hero">
-        {/* Anti-pattern: unoptimized image — no width, height, srcset, or lazy loading */}
-        <img
-          src="/hero-large.png"
-          alt="News Aggregator Hero Banner"
-          className="hero__image"
-          data-testid="hero-image"
-        />
-        <div className="hero__overlay">
-          <h1 className="hero__title">HackerPulse</h1>
-          <p className="hero__subtitle">
-            Real-time top stories from Hacker News — curated and performance-engineered
-          </p>
-        </div>
-      </section>
+      {/* Masthead */}
+      <header className="masthead">
+        <h1 className="masthead__logo">
+          Hacker<span className="masthead__logo-accent">Pulse</span>
+        </h1>
+        <p className="masthead__tagline">
+          Real-time top stories from Hacker News — curated and performance-engineered
+        </p>
+        <hr className="masthead__rule" />
+      </header>
 
       {/* Toolbar */}
       <div className="toolbar">
