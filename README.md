@@ -2,8 +2,6 @@
 
 A React-based news aggregator that fetches and displays top stories from the [Hacker News API](https://github.com/HackerNews/API). This project demonstrates web performance engineering — starting from a deliberately unoptimized baseline and systematically optimizing for Core Web Vitals (LCP, INP, CLS).
 
-![HackerPulse](public/hero-large.png)
-
 ## Features
 
 - 📰 Displays top 500 stories from HackerNews
@@ -15,11 +13,13 @@ A React-based news aggregator that fetches and displays top stories from the [Ha
 
 ## Tech Stack
 
-- **React** — UI framework
-- **Vite** — Build tool
-- **@tanstack/react-virtual** — List virtualization (optimized version)
-- **lodash** — Utility functions
-- **Docker + Nginx** — Production deployment
+| Technology | Purpose |
+|---|---|
+| **React 19** | UI framework |
+| **Vite 8** | Build tool & dev server |
+| **@tanstack/react-virtual** | List virtualization for rendering only visible items |
+| **Lodash** | Utility functions (cherry-picked imports) |
+| **Docker + Nginx** | Production containerized deployment |
 
 ---
 
@@ -29,7 +29,7 @@ A React-based news aggregator that fetches and displays top stories from the [Ha
 
 - **Node.js** >= 18
 - **npm** >= 9
-- **Docker** and **Docker Compose** (for containerized deployment)
+- **Docker** and **Docker Compose** (optional, for containerized deployment)
 
 ### Installation
 
@@ -66,7 +66,7 @@ The application will be available at [http://localhost:3000](http://localhost:30
 ## Branch Structure
 
 | Branch | Description |
-|--------|-------------|
+|---|---|
 | `main` | ✅ Fully optimized version with all performance improvements |
 | `slow-version` | 🐢 Intentionally unoptimized version demonstrating common anti-patterns |
 
@@ -88,18 +88,20 @@ npm run dev
 
 ---
 
-## Performance Optimizations Applied
+## Performance Optimizations
 
-See [PERFORMANCE.md](PERFORMANCE.md) for detailed before/after metrics and analysis.
+For detailed before/after metrics and analysis, see [PERFORMANCE.md](PERFORMANCE.md).
 
-### Summary of Optimizations
+### Summary
 
-1. **Parallelized Network Requests** — `Promise.all` instead of sequential fetching
-2. **List Virtualization** — `@tanstack/react-virtual` renders only visible items
-3. **Cherry-picked Lodash** — `import sortBy from 'lodash/sortBy'` instead of full library
-4. **Memoized Computations** — `React.memo`, `useMemo` for expensive operations
-5. **Optimized Images** — `width`, `height`, `srcset`, WebP format
-6. **Code Splitting** — `React.lazy` + `Suspense` for on-demand loading
+| # | Optimization | Details |
+|---|---|---|
+| 1 | **Parallelized Network Requests** | `Promise.all` instead of sequential fetching |
+| 2 | **List Virtualization** | `@tanstack/react-virtual` renders only visible items |
+| 3 | **Cherry-picked Lodash** | `import sortBy from 'lodash/sortBy'` instead of the full library |
+| 4 | **Memoized Computations** | `React.memo`, `useMemo` for expensive operations |
+| 5 | **Optimized Images** | `width`, `height`, `srcset`, WebP format |
+| 6 | **Code Splitting** | `React.lazy` + `Suspense` for on-demand loading |
 
 ---
 
@@ -112,12 +114,24 @@ npm run build
 # Preview the production build
 npm run preview
 
-# Generate bundle analysis report
-# The stats.html file is automatically generated during build
+# Bundle analysis report (stats.html) is auto-generated during build
 ```
 
 ---
 
-## License
+## Project Structure
 
-MIT
+```
+news-aggregator/
+├── public/              # Static assets (images, icons)
+├── src/
+│   ├── main.jsx         # Application entry point
+│   ├── App.jsx          # Root component with data fetching & UI
+│   ├── App.css          # Component styles
+│   └── index.css        # Global styles & design tokens
+├── Dockerfile           # Multi-stage Docker build
+├── docker-compose.yml   # Docker Compose configuration
+├── nginx.conf           # Nginx config for production serving
+├── vite.config.js       # Vite build configuration
+└── package.json         # Dependencies & scripts
+```
