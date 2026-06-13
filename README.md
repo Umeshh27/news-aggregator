@@ -13,13 +13,13 @@ A React-based news aggregator that fetches and displays top stories from the [Ha
 
 ## Tech Stack
 
-| Technology | Purpose |
-|---|---|
-| **React 19** | UI framework |
-| **Vite 8** | Build tool & dev server |
+| Technology                  | Purpose                                              |
+| --------------------------- | ---------------------------------------------------- |
+| **React 19**                | UI framework                                         |
+| **Vite 8**                  | Build tool & dev server                              |
 | **@tanstack/react-virtual** | List virtualization for rendering only visible items |
-| **Lodash** | Utility functions (cherry-picked imports) |
-| **Docker + Nginx** | Production containerized deployment |
+| **Lodash**                  | Utility functions (cherry-picked imports)            |
+| **Docker + Nginx**          | Production containerized deployment                  |
 
 ---
 
@@ -65,9 +65,9 @@ The application will be available at [http://localhost:3000](http://localhost:30
 
 ## Branch Structure
 
-| Branch | Description |
-|---|---|
-| `main` | ✅ Fully optimized version with all performance improvements |
+| Branch         | Description                                                             |
+| -------------- | ----------------------------------------------------------------------- |
+| `main`         | ✅ Fully optimized version with all performance improvements            |
 | `slow-version` | 🐢 Intentionally unoptimized version demonstrating common anti-patterns |
 
 ### Running the Slow Version
@@ -94,14 +94,14 @@ For detailed before/after metrics and analysis, see [PERFORMANCE.md](PERFORMANCE
 
 ### Summary
 
-| # | Optimization | Details |
-|---|---|---|
-| 1 | **Parallelized Network Requests** | `Promise.all` instead of sequential fetching |
-| 2 | **List Virtualization** | `@tanstack/react-virtual` renders only visible items |
-| 3 | **Cherry-picked Lodash** | `import sortBy from 'lodash/sortBy'` instead of the full library |
-| 4 | **Memoized Computations** | `React.memo`, `useMemo` for expensive operations |
-| 5 | **Optimized Images** | `width`, `height`, `srcset`, WebP format |
-| 6 | **Code Splitting** | `React.lazy` + `Suspense` for on-demand loading |
+| #   | Optimization                      | Details                                                          |
+| --- | --------------------------------- | ---------------------------------------------------------------- |
+| 1   | **Parallelized Network Requests** | `Promise.all` instead of sequential fetching                     |
+| 2   | **List Virtualization**           | `@tanstack/react-virtual` renders only visible items             |
+| 3   | **Cherry-picked Lodash**          | `import sortBy from 'lodash/sortBy'` instead of the full library |
+| 4   | **Memoized Computations**         | `React.memo`, `useMemo` for expensive operations                 |
+| 5   | **Optimized Images**              | `width`, `height`, `srcset`, WebP format                         |
+| 6   | **Code Splitting**                | `React.lazy` + `Suspense` for on-demand loading                  |
 
 ---
 
