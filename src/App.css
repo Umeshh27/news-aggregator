@@ -47,6 +47,32 @@
   border-radius: 2px;
 }
 
+/* ========== Hero Image ========== */
+.masthead__hero-container {
+  margin: var(--space-lg) auto 0;
+  max-width: 800px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.masthead__hero-container:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border-hover);
+}
+
+.masthead__hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  aspect-ratio: 3 / 1;
+}
+
+
 /* ========== Toolbar ========== */
 .toolbar {
   position: sticky;

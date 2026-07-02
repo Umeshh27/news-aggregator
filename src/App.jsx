@@ -1,20 +1,23 @@
-import { useState, useEffect } from 'react';
-import _ from 'lodash'; // Anti-pattern: importing entire lodash library
+import { useState, useEffect, useMemo, useRef, lazy, Suspense, memo } from 'react';
+import sortBy from 'lodash/sortBy';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import './App.css';
 
 const HN_API_BASE = 'https://hacker-news.firebaseio.com/v0';
 
-// Anti-pattern: expensive computation in render path, not memoized
+// Reused single Intl.DateTimeFormat instance to avoid creating it on every render
+const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  timeZoneName: 'short',
+});
+
 function formatTimestamp(unixTime) {
-  return new Date(unixTime * 1000).toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZoneName: 'short',
-  });
+  return dateTimeFormatter.format(new Date(unixTime * 1000));
 }
 
 function getScoreClass(score) {
@@ -23,9 +26,9 @@ function getScoreClass(score) {
   return 'article-item__score--low';
 }
 
-// Anti-pattern: Not using React.memo, re-renders on every parent render
-function ArticleItem({ article, index }) {
-  // Anti-pattern: expensive computation called every render
+// Wrapped with React.memo to prevent unnecessary re-renders when parent state changes.
+// Since the props passed (article, index) have stable references, memo is highly effective.
+const ArticleItem = memo(function ArticleItem({ article, index }) {
   const formattedTime = formatTimestamp(article.time);
 
   return (
@@ -55,22 +58,10 @@ function ArticleItem({ article, index }) {
       </div>
     </div>
   );
-}
+});
 
-// No code splitting — Footer is bundled into main chunk
-function Footer() {
-  return (
-    <footer className="footer">
-      <p>
-        Powered by{' '}
-        <a href="https://news.ycombinator.com" target="_blank" rel="noopener noreferrer">
-          Hacker News API
-        </a>{' '}
-        &middot; Built with React &amp; Vite &middot; Performance Engineering Demo
-      </p>
-    </footer>
-  );
-}
+// Dynamic import for code splitting
+const Footer = lazy(() => import('./Footer'));
 
 function App() {
   const [articles, setArticles] = useState([]);
@@ -85,29 +76,32 @@ function App() {
       try {
         setLoading(true);
         setError(null);
+        setLoadedCount(0);
 
         const response = await fetch(`${HN_API_BASE}/topstories.json`);
         if (!response.ok) throw new Error('Failed to fetch story IDs');
         const storyIds = await response.json();
 
-        const stories = [];
-
-        // Anti-pattern: sequential fetching in a loop (N+1 requests)
-        for (const id of storyIds.slice(0, 500)) {
+        // Parallelize fetching of Hacker News items (N+1 query optimization)
+        const idsToFetch = storyIds.slice(0, 500);
+        const promises = idsToFetch.map(async (id) => {
           try {
             const storyResp = await fetch(`${HN_API_BASE}/item/${id}.json`);
             if (storyResp.ok) {
               const storyData = await storyResp.json();
               if (storyData) {
-                stories.push(storyData);
-                setLoadedCount(stories.length);
+                setLoadedCount((prev) => prev + 1);
+                return storyData;
               }
             }
           } catch {
             // Skip failed individual fetches
           }
-        }
+          return null;
+        });
 
+        const resolvedStories = await Promise.all(promises);
+        const stories = resolvedStories.filter(Boolean);
         setArticles(stories);
       } catch (err) {
         setError(err.message);
@@ -119,15 +113,28 @@ function App() {
     fetchAllStories();
   }, []);
 
-  // Anti-pattern: filtering and sorting on every render without memoization
-  let displayedArticles = articles.filter((article) =>
-    article.title?.toLowerCase().includes(filterText.toLowerCase())
-  );
+  // Memoized filter and sort computation to avoid calculation on every render
+  const displayedArticles = useMemo(() => {
+    let result = articles.filter((article) =>
+      article.title?.toLowerCase().includes(filterText.toLowerCase())
+    );
 
-  if (sortByScore) {
-    // Anti-pattern: using full lodash for a single function
-    displayedArticles = _.sortBy(displayedArticles, 'score').reverse();
-  }
+    if (sortByScore) {
+      result = sortBy(result, 'score').reverse();
+    }
+    return result;
+  }, [articles, filterText, sortByScore]);
+
+  // Ref for virtualization container
+  const parentRef = useRef();
+
+  // Initialize virtualization virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: displayedArticles.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 90, // Approximate height of ArticleItem
+    overscan: 5,
+  });
 
   const handleRetry = () => {
     window.location.reload();
@@ -143,6 +150,21 @@ function App() {
         <p className="masthead__tagline">
           Real-time top stories from Hacker News — curated and performance-engineered
         </p>
+
+        {/* Optimized Hero Image: Explicit width, height, srcset for responsive loading without layout shift */}
+        <div className="masthead__hero-container">
+          <img
+            src="/hero-large.webp"
+            srcSet="/hero-small.webp 480w, /hero-medium.webp 768w, /hero-large.webp 1200w"
+            sizes="(max-width: 600px) 480px, (max-width: 900px) 768px, 1200px"
+            alt="HackerPulse Hero Banner"
+            width="1200"
+            height="400"
+            className="masthead__hero-img"
+            loading="eager"
+          />
+        </div>
+
         <hr className="masthead__rule" />
       </header>
 
@@ -206,20 +228,47 @@ function App() {
         )}
 
         {!loading && !error && (
-          // Anti-pattern: rendering ALL items without virtualization
-          <div className="article-list" data-testid="article-list">
-            {displayedArticles.map((article, index) => (
-              <ArticleItem
-                key={article.id}
-                article={article}
-                index={index}
-              />
-            ))}
+          // Virtualized rendering of 500+ items
+          <div
+            ref={parentRef}
+            className="virtual-list-container"
+            style={{ height: '70vh' }}
+            data-testid="article-list"
+          >
+            <div
+              className="virtual-list-inner"
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const article = displayedArticles[virtualRow.index];
+                if (!article) return null;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={rowVirtualizer.measureElement}
+                    className="virtual-list-item"
+                    style={{
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <ArticleItem
+                      article={article}
+                      index={virtualRow.index}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </main>
 
-      <Footer />
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
     </div>
   );
 }
